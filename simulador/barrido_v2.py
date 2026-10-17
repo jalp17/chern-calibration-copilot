@@ -265,7 +265,38 @@ def main():
     ap.add_argument('--out', default='barrido_v2.json')
     ap.add_argument('--ps', type=float, nargs='+',
                     default=[0.0, 0.005, 0.01, 0.02, 0.04, 0.07, 0.10, 0.15, 0.22, 0.30])
-    run(ap.parse_args())
+    a = ap.parse_args()
+    _validar_argumentos(a)
+    run(a)
+
+
+def _validar_argumentos(a: argparse.Namespace) -> None:
+    """Valida los argumentos de linea de comandos. Lanza SystemExit si invalido."""
+    errores: list[str] = []
+    if a.n is not None and a.n <= 0:
+        errores.append("--n debe ser > 0")
+    if a.G is not None and a.G <= 0:
+        errores.append("--G debe ser > 0")
+    if a.Nk is not None and a.Nk < 2:
+        errores.append("--Nk debe ser >= 2")
+    if a.nseeds is not None and a.nseeds <= 0:
+        errores.append("--nseeds debe ser > 0")
+    if a.ps:
+        for p in a.ps:
+            if p < 0 or p > 1:
+                errores.append(f"p={p} fuera de rango [0,1]")
+                break
+    modelos_validos = {"indep", "shared", "final"}
+    for m in a.modelos:
+        if m not in modelos_validos:
+            errores.append(f"--modelos '{m}' invalido (validos: {sorted(modelos_validos)})")
+    if a.device not in ("cpu", "cuda"):
+        errores.append(f"--device '{a.device}' invalido (validos: cpu, cuda)")
+    if errores:
+        print("Argumentos invalidos:")
+        for e in errores:
+            print(f"  - {e}")
+        raise SystemExit(2)
 
 
 if __name__ == '__main__':
