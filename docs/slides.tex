@@ -1,0 +1,99 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+\title{Chern Calibration Copilot}
+\subtitle{Diagnóstico de calibración cuántica: cómo el ruido degrada el número de Chern}
+\author{Jesus · Hackathon AMD ACT III · Pista 1: Intelligent Industry}
+\institute{AMD Developer Hackathon ACT III — lablab.ai × AMD}
+\date{17 de octubre de 2026}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\section{Contexto}
+\begin{frame}{El problema}
+\begin{itemize}
+\item El \emph{número de Chern} es un invariante topológico que clasifica fases de materia cuántica.
+\item Cuando preparamos el estado cuántico con ruido, ¿cuánta infidelidad tolera antes de dejar de ser el valor exacto?
+\item No hay respuesta publicada. Los ordenadores cuánticos actuales operan con fidelidades del 95--99\%, y no se sabe cuándo el invariante se rompe.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Lo que hicimos}
+\begin{itemize}
+\item Simulador statevector en PyTorch/ROCm, validado contra PennyLane con error $10^{-15}$.
+\item Preparamos el estado de la banda ocupada del modelo de Haldane con ruido depolarizante por puerta.
+\item Medimos el Chern con el método Fukui--Hatsugai--Suzuki (FHS).
+\item Probamos tres modelos de ruido con 256 semillas y barras de error.
+\end{itemize}
+\end{frame}
+
+\section{Resultado}
+\begin{frame}{Resultado principal}
+\begin{table}[!htbp]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Modelo de ruido & $1-F$ & \% acierto (Chern exacto) \\
+\midrule
+\texttt{final} --- control coherente & 0,42 & \textbf{100 \%} \\
+\texttt{shared} --- Pauli fijo por puerta & 0,42 & 28 \% \\
+\texttt{indep} --- ruido por (puerta, k) & 0,42 & 0 \% \\
+\bottomrule
+\end{tabular}
+\end{table}
+\vspace{0.5cm}
+\begin{block}{Hallazgo}
+El invariante es \textbf{exactamente robusto} ante error coherente, se degrada suavemente ante error en posiciones fijas de puerta, y se destruye ante ruido incoherente. No hay un umbral único: depende de la estructura del error, no solo de su tamaño.
+\end{block}
+\end{frame}
+
+\begin{frame}{El agente de calibración}
+\begin{itemize}
+\item Un agente LLM (Gemma vía AMD Token Factory) lee las especificaciones externas del dispositivo (presupuesto de error, coherencia, criterio de aceptación).
+\item Emite un plan de mitigación \textbf{con fuentes citadas}.
+\item El agente \emph{no} calcula el Chern: interpreta resultados.
+\end{itemize}
+\end{frame}
+
+\section{AMD y honestidad}
+\begin{frame}{AMD en el producto}
+\begin{itemize}
+\item Simulación en GPU AMD Radeon Pro W7900D (ROCm 7.15, 48 GiB).
+\item Justificada por memoria: 256 semillas $\times$ n=14 $\times$ malla 12$\times$12 requieren $\sim$45 GiB, que superan los 6 GiB de CPU.
+\item No se afirma speedup: no se ha medido en GPU localmente.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Limitaciones declaradas}
+\begin{itemize}
+\item $n=1$ da el mismo Chern que $n=14$: el estado de Haldane es 1 cúbit por $k$.
+\item No simulamos el efecto Hall cuántico físico: calculamos un invariante.
+\item Los valores del corpus del agente son ilustrativos, no mediciones de un dispositivo real.
+\end{itemize}
+\end{frame}
+
+\section{Demo}
+\begin{frame}{Demo}
+\begin{itemize}
+\item \texttt{streamlit run demo/app.py} — barra de ruido, modelo de ruido, semillas, curva de acierto y plan del agente.
+\item Repo: \url{github.com/jalp17/chern-calibration-copilot}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Referencias}
+\begin{itemize}
+\item Lado et al., \emph{Phys. Rev. Research} 6, 043288 (2024), arXiv:2404.06048.
+\item Fukui, Hatsugai, Suzuki, \emph{JPSJ} 74, 1674 (2005).
+\item Haldane, \emph{PRL} 61, 2015 (1988).
+\end{itemize}
+\end{frame}
+
+\end{document}

@@ -1,0 +1,17 @@
+file 'portada.png'
+duration 10
+file 'f_problema.png'
+duration 10
+file 'f_metodo.png'
+duration 10
+file 'frame_resultados.png'
+duration 15
+file 'f_hallazgo.png'
+duration 10
+file 'f_amd.png'
+duration 10
+file 'f_demo.png'
+duration 10
+file 'f_refs.png'
+duration 5
+file 'f_refs.png'
