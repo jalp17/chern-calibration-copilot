@@ -29,6 +29,7 @@ sys.path.insert(0, str(_HERE))
 sys.path.insert(0, str(_HERE / "simulador"))
 
 from simulador import barrido_v2 as b2  # noqa: E402
+from agente import agente  # noqa: E402
 
 st.set_page_config(
     page_title="Chern Calibration Copilot",
@@ -151,6 +152,18 @@ if ejecutar:
 
     with st.expander("JSON completo"):
         st.json(res)
+
+    st.divider()
+    st.subheader("Plan de mitigacion (agente)")
+    with st.spinner("Generando plan..."):
+        plan = agente.generar(res)
+    st.markdown(agente.render(plan))
+    if plan.via != "llm":
+        st.caption(
+            "El agente ha corrido **sin LLM** (no hay clave en `.env`): usa el "
+            "plan local a partir del corpus. Configura `OPENAI_API_KEY` para "
+            "sintetizarlo con Gemma desde Token Factory."
+        )
 else:
     st.write(
         "Pulsa **Ejecutar barrido** para correr la simulacion con estos "
