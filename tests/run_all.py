@@ -26,6 +26,11 @@ CATEGORIAS = {
     'errores': 'tests.test_errores',
     'optimizacion': 'tests.test_optimizacion',
     'seguridad': 'tests.test_seguridad',
+    'qaoa': 'tests.test_qaoa',
+    'espacio_real': 'tests.test_espacio_real',
+    'evolucion_temporal': 'tests.test_evolucion_temporal',
+    'lindblad': 'tests.test_lindblad',
+    'surface_code': 'tests.test_surface_code',
 }
 
 

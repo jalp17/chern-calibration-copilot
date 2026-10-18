@@ -84,6 +84,29 @@ simulador/
 | simulación | GPU AMD Radeon Pro W7900D (ROCm) o CPU |
 | agente | remoto (Token Factory) o local (fallback) |
 | demo | navegador (Streamlit) |
+| QAOA MaxCut | CPU o GPU (vectorizado por batch) |
+
+## QAOA para MaxCut
+
+Módulo opcional de optimización cuántica: **Quantum Approximate Optimization Algorithm**
+para el problema de corte máximo (MaxCut). Implementación original sobre el mismo
+motor statevector.
+
+```python
+from qsim_torch import Simulator
+from qaoa import optimize_qaoa, complete_graph
+
+sim = Simulator(4)
+params, cut, opt = optimize_qaoa(sim, complete_graph(4), p=2, n_steps=300)
+```
+
+- **Coste:** `C = sum (1 - Z_i Z_j) / 2`, diagonal en la base Z → `U_C(γ)` es una fase
+  diagonal elemental (sin construir la matriz).
+- **Mezclador:** `B = sum X_i` → `U_B(β) = RX(2β)` por qubit, n puertas 1-qubit.
+- **Optimización:** autograd de PyTorch + Adam. Validado contra diferencias finitas
+  y contra una referencia de matriz exponencial completa.
+
+Ver [`docs/qaoa.md`](docs/qaoa.md) y `tests/test_qaoa.py` (7 tests).
 
 ## AMD
 

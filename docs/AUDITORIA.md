@@ -124,7 +124,7 @@ es ~2.5e-07 de error relativo frente a complex128.
 - **Sin ejecución arbitraria:** no hay `eval`, `exec`, `pickle.loads`, `os.system`, `__import__`, ni `subprocess.run` con input del usuario.
 - **LLM como string:** el texto del modelo se trata como string en `plan.texto`, nunca se ejecuta.
 - **Validación de argumentos:** `barrido_v2` rechaza `n<=0`, `G<=0`, `Nk<2`, `nseeds<=0`, `p<0`, `p>1`, modelos inválidos y `device` inválido.
-- **Sin rutas del vault:** no hay `/home/jesus`, `knowledge_database` ni `obsidian_cerebro` en el repo.
+- **Sin rutas del vault:** no hay rutas absolutas de la base de conocimiento local en el repo (test D7 lo verifica).
 - **Docker no-root:** `USER appuser`.
 
 ---
