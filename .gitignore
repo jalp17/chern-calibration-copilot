@@ -18,3 +18,9 @@ assets/slides.pdf
 assets/demo.mp4
 node_modules/
 .DS_Store
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
