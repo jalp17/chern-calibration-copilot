@@ -3,7 +3,7 @@
 ```yaml
 titulo: "Chern Calibration Copilot"
 titulo_caracteres: 25
-descripcion_corta: "Copiloto de calibracion cuantica: cuantifica como el ruido de preparacion degrada un invariante topologico y propone mitigacion con fuentes."
+descripcion_corta: "Copiloto de calibración cuántica: quantum kernel para clasificación de fases de Haldane + agente de calibración que propone mitigación con fuentes."
 licencia: MIT
 hackathon: "AMD Developer Hackathon ACT III"
 pista: "1 - Intelligent Industry"
@@ -39,6 +39,19 @@ suavemente ante error en posiciones fijas de puerta, y se destruye ante ruido
 incoherente. No hay un umbral único: **depende de la estructura del error, no sólo
 de su tamaño.**
 
+## Quantum Kernel: ventaja del enfoque
+
+El estado de un circuito variacional $U(x)|0\\rangle$ vive en un espacio de
+$2^n$ amplitudes complejas. Dos puntos de datos $x, y$ mapeados a estados
+$|\\psi(x)\\rangle, |\\psi(y)\\rangle$ tienen un overlap
+$|\\langle\\psi(x)|\\psi(y)\\rangle|^2$ que codifica correlaciones de fase
+y entrelazamiento. Un clasificador basado en este kernel puede encontrar
+fronteras de decisión que un kernel RBF sobre las 4 features crudas
+necesitaría exponencialmente más parámetros para aproximar.
+
+Esto se valida empíricamente en `tests/test_kernel.py`: SVM con kernel
+cuántico precomputado vs SVM-RBF en las mismas features de Haldane.
+
 ## Cómo ejecutarlo
 
 ```bash
@@ -47,6 +60,9 @@ pip install -r requirements.txt
 
 # 2. verificar el simulador (debe acabar en OK)
 python simulador/test_qsim.py
+
+# 3. pruebas del quantum kernel (nuevo)
+python tests/run_all.py kernel
 
 # 3. barrido desde linea de comandos
 python simulador/barrido_v2.py --n 6 --G 4 --Nk 12 --nseeds 256 \
@@ -60,7 +76,8 @@ Comando completo para un juez:
 
 ```bash
 git clone <repo> && cd <repo> && pip install -r requirements.txt \
-  && python simulador/test_qsim.py && make demo
+  && python simulador/test_qsim.py && python tests/run_all.py kernel \
+  && make demo
 ```
 
 ## Arquitectura
@@ -74,9 +91,11 @@ agente/
 simulador/
   qsim_torch.py      motor statevector en PyTorch (validado vs PennyLane)
   haldane.py         modelo de Haldane + Chern por FHS
+  kernel_cuantico.py feature map cuántico + SVM con kernel precomputado
   ruido.py           canal depolarizante por puerta
-  barrido_v2.py      barrido: ruido vs tasa de error topologico
+  barrido_v2.py      barrido: ruido vs tasa de error topológico
   test_qsim.py       12 suites de test
+  test_kernel.py     5 tests del quantum kernel
 ```
 
 | componente | dónde corre |
@@ -85,6 +104,7 @@ simulador/
 | agente | remoto (Token Factory) o local (fallback) |
 | demo | navegador (Streamlit) |
 | QAOA MaxCut | CPU o GPU (vectorizado por batch) |
+| Quantum Kernel | CPU o GPU (overlaps de statevector) |
 
 ## QAOA para MaxCut
 

@@ -165,6 +165,94 @@ def generar(res: dict) -> Plan:
     return plan
 
 
+def generar_con_specs(specs: dict, res: dict) -> Plan:
+    """Punto de entrada con especificaciones del dispositivo.
+
+    Combina el JSON del barrido con las specs de hardware (tasa de error,
+    coherencia, conectividad, criterio de aceptación) y devuelve un plan
+    de mitigación enriquecido con acciones específicas del dispositivo.
+
+    Parametros
+    ----------
+    specs : dict
+        Claves esperadas: tasa_error_puerta, coherencia_t1_us,
+        coherencia_t2_us, conectividad, criterio_aceptacion.
+    res : dict
+        JSON del barrido (formato de barrido_v2.py).
+    """
+    corpus = leer_corpus()
+    resumen = _resumen_barrido(res)
+
+    # Plan base con las reglas existentes
+    plan = _plan_local(resumen, corpus)
+
+    # Acciones específicas derivadas de las specs del dispositivo
+    acciones_extra: list[str] = []
+    fuentes_extra: list[str] = []
+
+    tasa = specs.get("tasa_error_puerta", 0.0)
+    t1 = specs.get("coherencia_t1_us", 0.0)
+    t2 = specs.get("coherencia_t2_us", 0.0)
+    conectividad = specs.get("conectividad", "")
+    criterio = specs.get("criterio_aceptacion", CRITERIO_ACEPTAR)
+
+    if tasa > 0.05:
+        acciones_extra.append(
+            f"Tasa de error de puerta {tasa:.3f} excede el umbral típico; "
+            "recalibrar puertas de dos qubits.")
+        fuentes_extra.append("presupuesto-y-criterios.md > Presupuesto de error")
+
+    if t1 > 0 and t1 < 100:
+        acciones_extra.append(
+            f"T1={t1:.0f} µs corto: considerar echo espinal o puertas más rápidas.")
+        fuentes_extra.append("spec-dispositivo-ejemplo.md > Limites operativos")
+
+    if t2 > 0 and t2 < 50:
+        acciones_extra.append(
+            f"T2={t2:.0f} µs corto: priorizar dynamical decoupling.")
+        fuentes_extra.append("mitigacion.md > 3. Recalibracion diaria")
+
+    if conectividad == "lineal":
+        acciones_extra.append(
+            "Conectividad lineal: recompilar circuitos para minimizar SWAPs.")
+        fuentes_extra.append("spec-dispositivo-ejemplo.md > Conectividad")
+
+    if criterio > CRITERIO_ACEPTAR:
+        acciones_extra.append(
+            f"Criterio de aceptación {criterio:.2f} por encima del estándar "
+            f"{CRITERIO_ACEPTAR}: validar con barrido adicional.")
+        fuentes_extra.append("presupuesto-y-criterios.md > Criterio de aceptacion")
+
+    # Fusionar acciones y fuentes sin duplicados
+    plan.acciones.extend(a for a in acciones_extra if a not in plan.acciones)
+    plan.fuentes.extend(f for f in fuentes_extra if f not in plan.fuentes)
+
+    # Enriquecer el texto con specs si hay LLM
+    if plan.via == "llm":
+        user = (
+            f"Especificaciones del dispositivo:\n"
+            f"- Tasa de error de puerta: {tasa}\n"
+            f"- T1: {t1} µs\n"
+            f"- T2: {t2} µs\n"
+            f"- Conectividad: {conectividad}\n"
+            f"- Criterio de aceptación: {criterio}\n\n"
+            f"Resultado del barrido:\n{json.dumps(resumen, indent=1, ensure_ascii=False)}\n\n"
+            f"Corpus de especificaciones:\n" +
+            "\n\n".join(f"### {n}\n{c}" for n, c in corpus.items())
+        )
+        r = llm.preguntar(SYSTEM_PROMPT, user)
+        if r.via == "llm":
+            plan.texto = r.texto
+            plan.via = "llm"
+            plan.modelo = r.modelo
+        else:
+            plan.via = "local"
+            plan.aviso = (f"sin LLM ({r.error}). Plan local determinista "
+                          "a partir del corpus y specs del dispositivo.")
+
+    return plan
+
+
 def render(plan: Plan) -> str:
     """Markdown listo para mostrar o para el PDF."""
     lineas = [f"## Plan de mitigacion", "",

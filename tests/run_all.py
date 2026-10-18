@@ -31,6 +31,7 @@ CATEGORIAS = {
     'evolucion_temporal': 'tests.test_evolucion_temporal',
     'lindblad': 'tests.test_lindblad',
     'surface_code': 'tests.test_surface_code',
+    'kernel': 'tests.test_kernel',
 }
 
 

@@ -216,14 +216,17 @@ class Simulator:
     # ---------- circuitos ----------
 
     def variational_circuit(self, data: torch.Tensor,
-                            weights: torch.Tensor) -> torch.Tensor:
+                            weights: torch.Tensor,
+                            return_state: bool = False) -> torch.Tensor:
         """
         Circuito variational tipo StronglyEntangling, variante RY.
 
         data:    (batch, n_qubits) angulos de entrada
         weights: (n_layers, n_qubits) parametros entrenables
+        return_state: si True, devuelve (readout, psi) para kernel cuantico.
 
         Returns: (batch,) <Z> en el ultimo qubit.
+                 Si return_state=True: ((batch,), (batch, 2^n)).
 
         Se conserva para comparar contra la variante RZ optimizada
         (`strongly_entangling`). Ver T11: deben coincidir bit a bit.
@@ -237,10 +240,14 @@ class Simulator:
                 psi = self._apply_cnot(psi, q, q + 1)
             psi = self._apply_cnot(psi, self.n_qubits - 1, 0)
 
-        return self.measure_z(psi)
+        readout = self.measure_z(psi)
+        if return_state:
+            return readout, psi
+        return readout
 
     def strongly_entangling(self, data: torch.Tensor,
-                            weights: torch.Tensor) -> torch.Tensor:
+                            weights: torch.Tensor,
+                            return_state: bool = False) -> torch.Tensor:
         """
         Variante OPTIMIZADA y fiel a PennyLane StronglyEntanglingAnsatz
         (subcircuit_type="default"): RZ en cada qubit + anillo CNOT.
@@ -251,7 +258,9 @@ class Simulator:
 
         data:    (batch, n_qubits)
         weights: (n_layers, n_qubits)
+        return_state: si True, devuelve (readout, psi) para kernel cuantico.
         Returns: (batch, n_qubits) valores esperados <Z_q>
+                 Si return_state=True: ((batch, n), (batch, 2^n)).
         """
         psi = self.from_angles(data)
         n = self.n_qubits
@@ -262,7 +271,10 @@ class Simulator:
                 psi = self._apply_cnot(psi, q, q + 1)
             psi = self._apply_cnot(psi, n - 1, 0)
 
-        return self.measure_z_all(psi)                      # (batch, n)
+        readout = self.measure_z_all(psi)                      # (batch, n)
+        if return_state:
+            return readout, psi
+        return readout
 
     def probabilities(self, psi: torch.Tensor) -> torch.Tensor:
         """|amplitude|^2 por muestra."""
